@@ -1,0 +1,61 @@
+from tensorflow.keras.layers import Input, Dense
+from tensorflow.keras.models import Model
+from tensorflow.keras.optimizers import RMSprop
+from tensorflow.keras import backend as K
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import tensorflow as tf
+tf.compat.v1.disable_eager_execution()
+
+data = 
+
+# 모델 파라미터 설정
+d_input = data.shape[1] # feature 수: 3
+d_hidden = 256
+d_output = 1
+g_input = 32
+g_hidden = 256
+g_output = d_input
+
+# 가짜 데이터 생성
+def makeZ(m, n):
+    z = np.random.uniform(-1.0, 1.0, size=[m, n])
+    return z
+
+# 옵티마이저 설정
+def myOptimizer(lr):
+    return RMSprop(learning_rate=lr)
+    
+# Discriminator 모델
+def build_D():
+    d_x = Input(batch_shape=(None, d_input))
+    d_h = Dense(d_hidden, activation='relu')(d_x)
+    d_o = Dense(d_output, activation='sigmoid')(d_h)
+    
+    d_model = Model(d_x, d_o)
+    d_model.compile(loss='binary_crossentropy', optimizer=myOptimizer(0.0001))
+    
+    return d_model
+
+# Generator 모델
+def build_G():
+    g_x = Input(batch_shape=(None, g_input))
+    g_h = Dense(g_hidden, activation='relu')(g_x)
+    g_o = Dense(g_output, activation='linear')(g_h)
+    
+    g_model = Model(g_x, g_o)
+    
+    return g_model
+    
+# GAN 네트워크
+def build_GAN(discriminator, generator):
+    discriminator.trainable = False # discriminator 학습하지 않음.
+    z = Input(batch_shape=(None, g_input))
+    Gz = generator(z)
+    DGz = discriminator(Gz)
+    
+    gan_model = Model(z, DGz)
+    gan_model.compile(loss='binary_crossentropy', optimizer=myOptimizer(0.0005)) 
+    
+    return gan_model
